@@ -12,3 +12,6 @@ desktop_pal_vision.png
 
 artifacts/
 *.binlog
+
+# Local screenshots from Sol's smoke tests / PR captures (per-developer)
+screenshots/

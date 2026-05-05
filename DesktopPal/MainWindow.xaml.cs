@@ -25,7 +25,11 @@ namespace DesktopPal
         private DispatcherTimer _visionTimer;
         private System.Windows.Forms.NotifyIcon? _notifyIcon;
         private readonly WorldWindow _world;
-        private readonly CompanionWindow _companionWindow;
+        // Constructed lazily after the main window is shown. WPF (.NET 10)
+        // refuses Window.Owner assignment to a window whose HWND has not been
+        // realized yet, so CompanionWindow's ctor (Owner = mainWindow) cannot
+        // run while we are still inside MainWindow..ctor. See issue #52.
+        private CompanionWindow? _companionWindow;
         private System.Windows.Point? _targetPosition = null;
 
         // Live garden plot views, keyed by the persisted plot id. The
@@ -87,8 +91,11 @@ namespace DesktopPal
             _visionTimer.Tick += (s, e) => HandleVision();
             _visionTimer.Start();
 
-            _companionWindow = new CompanionWindow(this, Pet);
-            InitializeTray();
+            // Companion window + tray init are deferred to Loaded — see
+            // issue #52. CompanionWindow sets Owner = this in its ctor, and
+            // .NET 10 WPF requires the owner's HWND to exist (i.e. the window
+            // must have been shown) before that assignment is legal.
+            Loaded += MainWindow_OnLoaded;
 
             // Rehydrate persisted garden plots into the world canvas.
             // PetState.UpdateRealTime has already advanced their states based
@@ -110,6 +117,24 @@ namespace DesktopPal
             ContentRendered += MainWindow_ShowOnboardingIfNeeded;
 
             Logging.Info("MainWindow", "Startup complete.");
+        }
+
+        private void MainWindow_OnLoaded(object? sender, RoutedEventArgs e)
+        {
+            Loaded -= MainWindow_OnLoaded;
+            EnsureCompanionWindow();
+            InitializeTray();
+        }
+
+        // Constructs the companion window on first need. Safe to call from
+        // any deferred path (Loaded, tray, hotkey). Returns the live instance.
+        private CompanionWindow EnsureCompanionWindow()
+        {
+            if (_companionWindow == null)
+            {
+                _companionWindow = new CompanionWindow(this, Pet);
+            }
+            return _companionWindow;
         }
 
         private void MainWindow_ShowOnboardingIfNeeded(object? sender, EventArgs e)
@@ -204,7 +229,7 @@ namespace DesktopPal
 
         public void ShowSettings()
         {
-            Window owner = _companionWindow.IsVisible ? _companionWindow : this;
+            Window owner = (_companionWindow != null && _companionWindow.IsVisible) ? _companionWindow : this;
             var w = new SettingsWindow { Owner = owner };
             w.ShowDialog();
             RefreshSurfaceState();
@@ -212,15 +237,16 @@ namespace DesktopPal
 
         public void OpenCompanionPanel()
         {
-            _companionWindow.ShowPanel();
+            EnsureCompanionWindow().ShowPanel();
             RefreshSurfaceState();
         }
 
         public void ToggleCompanionPanel()
         {
-            if (_companionWindow.IsVisible)
+            var companion = EnsureCompanionWindow();
+            if (companion.IsVisible)
             {
-                _companionWindow.HidePanel();
+                companion.HidePanel();
                 return;
             }
 
@@ -239,7 +265,7 @@ namespace DesktopPal
                 _notifyIcon.Text = $"DesktopPal — {Pet.State.Name}";
             }
 
-            _companionWindow.RefreshFromState();
+            _companionWindow?.RefreshFromState();
         }
 
         public void CleanAll()
@@ -606,8 +632,11 @@ namespace DesktopPal
 
             try
             {
-                _companionWindow.PrepareForExit();
-                _companionWindow.Close();
+                if (_companionWindow != null)
+                {
+                    _companionWindow.PrepareForExit();
+                    _companionWindow.Close();
+                }
             }
             catch (Exception ex) { Logging.Warn("MainWindow", "Companion window close failed.", ex); }
 

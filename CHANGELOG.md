@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Startup crash on .NET 10 (P0, #52): `MainWindow`'s constructor previously instantiated `CompanionWindow`, whose ctor sets `Owner = mainWindow` before the main window had been shown. .NET 10 WPF tightened `Window.Owner` validation and now throws `InvalidOperationException: Cannot set Owner property to a Window that has not been shown previously.`, killing the process before any window or tray icon could appear. `CompanionWindow` construction and `InitializeTray()` are now deferred to `MainWindow.Loaded`, with a lazy `EnsureCompanionWindow()` helper guarding any earlier callers (e.g. the global hotkey path). No behavioural change once the app is running.
+
 ### Changed
 - Persistence: `pet_state.json` now lives under `%LOCALAPPDATA%\DesktopPal\` instead of next to the executable, so the app can be installed into a read-only location (Program Files / MSIX) without breaking saves. A new `Paths` helper resolves the data root and runs a one-shot legacy migration on startup: if `pet_state.json` exists next to the .exe and no save exists at the new path, it is copied forward and the legacy file is best-effort deleted. Migration outcome and resolved data root are recorded via `Logging`. JSON schema is unchanged in this revision (path-only move); schema versioning, atomic writes, and rolling backups remain tracked under the persistence design doc (#44).
 
