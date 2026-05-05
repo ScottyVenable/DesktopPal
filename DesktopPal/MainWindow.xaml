@@ -1,0 +1,15 @@
+<Window x:Class="DesktopPal.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DesktopPal" 
+        Height="Auto" Width="Auto"
+        WindowState="Maximized"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False">
+    <Canvas Name="MainCanvas">
+        <!-- The Pet will be added here -->
+    </Canvas>
+</Window>
