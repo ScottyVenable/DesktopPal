@@ -6,3 +6,7 @@ obj/
 *.sln.docstates
 pet_state.json
 desktop_pal_vision.png
+
+# Local Claude/Anthropic CLI agent settings (per-developer)
+.claude/
+

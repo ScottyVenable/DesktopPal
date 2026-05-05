@@ -34,23 +34,48 @@ The `FileSystemWatcher` triggers `HandleLetterReceived` in `MainWindow`. The AI 
 The `MainWindow` uses `AllowsTransparency="True"`. WPF handles per-pixel alpha, meaning the background is click-through to the desktop icons, but the Pet's sprite remains clickable for dragging/context menus.
 
 ## 5. Current Feature Status
-- [x] Transparent Overlay Foundation
-- [x] 3/4 Perspective Movement
-- [x] Drag & Drop Mechanics
-- [x] Stats & Persistence (Hunger, Happiness, etc.)
-- [x] LM Studio Chat Integration
-- [x] Letter Reading/Writing
-- [x] Basic Screen Awareness (Screenshot logic)
-- [x] Procedural Decorations (Planting trees/flowers)
 
-## 6. Future Roadmap (Recommended for Next Agent)
-1. **Vision Integration:** Pass the screenshots from `CaptureScreen()` to a local Vision model (like Moondream or Llava) via LM Studio to let the pet "see" specific apps.
-2. **Animation Overhaul:** Replace the `Ellipse` placeholders with `Lottie` animations or Sprite sheets for walking, sleeping, and eating.
-3. **Desktop Icon Manipulation:** Use `User32.dll` and `FindWindowEx` to locate `SysListView32` and programmatically move icons.
-4. **Farming/Gardening System:** Expand `Decoration.cs` to include interactive plots that the user can water.
-5. **System Tray Integration:** Add a "Do Not Disturb" toggle and settings menu in the Windows System Tray.
+### Implemented prototype capabilities
+- [x] Transparent overlay foundation
+- [x] Two-window desktop presentation model
+- [x] Drag and drop pet interaction
+- [x] Persistent pet stats and offline decay
+- [x] LM Studio chat integration
+- [x] Letter reading and reply writing through desktop `.txt` files
+- [x] Basic tray/settings/hotkey controls
+- [x] Simple world objects and cleanup interactions
 
-## 7. How to Develop
+### Partial or prototype-only capabilities
+- [~] Screen awareness groundwork exists, but there is no finished opt-in vision pipeline
+- [~] Visual presentation and animation are functional but still placeholder/prototype grade
+- [~] Decorations exist, but a persistent world system does not
+
+### Not yet implemented
+- [ ] Automated tests
+- [ ] CI workflows
+- [ ] Packaging and release pipeline
+- [ ] Multi-pet support
+- [ ] Production-ready memory system
+
+## 6. Repository and delivery status
+
+- The roadmap source of truth is `TRITIUM-PLAN.md`.
+- Contributor and triage guidance lives in `CONTRIBUTING.md` and `docs/ROADMAP.md`.
+- Historical notes in `plans/` should be treated as reference input, not the current execution plan.
+- The repository is still pre-release and should be described as a prototype unless a milestone explicitly upgrades that status.
+
+## 7. Recommended next work
+
+Prioritize the near-term Tritium work instead of adding new speculative features:
+
+1. Extract simulation/runtime behavior from frame-tied UI code.
+2. Define save-path, versioning, and recovery strategy.
+3. Harden system integrations and degraded-mode AI behavior.
+4. Add a first test baseline and CI workflow.
+5. Consolidate onboarding, settings, and drawer UX once the runtime direction is clearer.
+
+## 8. How to Develop
 1. Ensure .NET 10 SDK is installed.
-2. Run `dotnet build` to verify namespaces.
-3. Ensure LM Studio is active on port 1234 before running.
+2. Run `dotnet build DesktopPal/DesktopPal.csproj`.
+3. Start LM Studio on port 1234 if you need AI chat features.
+4. Review `TRITIUM-PLAN.md`, `docs/ROADMAP.md`, and `CONTRIBUTING.md` before planning new work.
