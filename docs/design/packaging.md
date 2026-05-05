@@ -1,6 +1,6 @@
 # Packaging & Distribution
 
-**Status:** Draft
+**Status:** Phase A scaffolded (Phase B/C deferred)
 **Owner:** Rook (QA & Release Engineer)
 **Issue:** #23 — Choose packaging path and publish release readiness checklist
 **Milestone:** Tritium-0
@@ -240,11 +240,29 @@ listed in brackets; Rook signs off the final go/no-go.
 
 ## Migration Path
 
-**Phase A — Single-file publish (Tritium-0 / Tritium-1).**
+**Phase A — Single-file publish (Tritium-0 / Tritium-1). [SCAFFOLDED]**
 Add a `publish` job to CI that runs the Option 1 command on push to
 `alpha`. Upload the resulting EXE as an artifact. Manually attach to the
 GitHub Release for tagged builds. Document the SmartScreen warning in the
 README so users know what to expect.
+
+Status as of the scaffold PR (#37):
+- `scripts/build-release.ps1` implements the canonical Option 1 publish
+  command and writes to `artifacts/DesktopPal-v<version>-<rid>/`.
+- `.github/workflows/release.yml` invokes the script via `workflow_dispatch`
+  and uploads the payload as a workflow artifact.
+- **Gaps remaining before this phase is complete:**
+  - No automatic trigger on push to `alpha` yet; manual dispatch only.
+  - No GitHub Release creation or asset upload from the workflow.
+  - No code-signing step (no cert).
+  - `csproj` does not yet declare `<Version>`/`<FileVersion>`; the script
+    accepts a `-Version` parameter but the project file should grow these
+    properties so unstamped builds are still labelled correctly.
+  - No SmartScreen guidance in the README.
+  - AssemblyVersion / FileVersion strip SemVer pre-release suffixes
+    (e.g. `-rc.1`) because the WPF MarkupCompilePass rejects them
+    (MC1005). The full string is preserved on Version /
+    InformationalVersion.
 
 **Phase B — Inno Setup installer, still unsigned (Tritium-2).**
 Add an `.iss` script that wraps the Phase A publish output. Adds Start menu
@@ -292,3 +310,4 @@ not creating these — this is a recommendation list only.**
 - Document the SmartScreen first-launch flow with screenshots in the README.
 
 — Rook
+

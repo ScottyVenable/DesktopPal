@@ -10,3 +10,5 @@ desktop_pal_vision.png
 # Local Claude/Anthropic CLI agent settings (per-developer)
 .claude/
 
+artifacts/
+*.binlog
