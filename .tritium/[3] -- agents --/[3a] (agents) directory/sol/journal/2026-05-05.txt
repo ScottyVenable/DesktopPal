@@ -21,3 +21,36 @@ next time I'm in here I want to actually use the workbook folder for something
 real. it's been sitting empty since day one and that's on me.
 
 — sol
+
+
+## 02:30 — persistence to LOCALAPPDATA
+
+shipped the path move today. pet_state.json no longer lives next to the .exe;
+it lives at %LOCALAPPDATA%\DesktopPal\pet_state.json. boring change on paper,
+load-bearing in practice — the moment the installer drops us into Program
+Files, writes next to the binary just silently fail. so this had to land
+before any packaging work gets serious.
+
+added a `Paths` static helper that owns the data root + a one-shot legacy
+migration. on first call it makes the directory, copies any legacy
+pet_state.json forward if the new path is empty, then best-effort deletes the
+legacy file. wrapped the whole thing in try/catch and routed every outcome
+through Logging so we get a real audit trail in desktoppal.log instead of
+the previous `catch { /* ignore */ }` shrug. that comment has been bothering
+me since I first read it. felt good to delete.
+
+what surprised me: Logging was already pointing at LOCALAPPDATA. so was half
+the future scaffolding in the design doc. PetState was the lone holdout still
+writing into BaseDirectory. once-over of every .cs file confirmed that's the
+only persistent file we own — settings ride inside pet_state, logs are
+already correct, SystemIntegrationService writes to the user's Desktop on
+purpose. clean scope.
+
+didn't touch the JSON schema. tempting to wrap it in a `{ schema, version,
+data }` envelope while I was in there, but that's a separate PR with its own
+migration story and the design doc agrees. path-only today.
+
+build clean on the first try, which always makes me suspicious. re-read the
+diff twice. still clean. shipped.
+
+— sol
