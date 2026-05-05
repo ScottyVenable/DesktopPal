@@ -26,16 +26,15 @@
         <Border Name="DrawerContent" Background="#CCFFFFFF" CornerRadius="20" Width="0" Height="50" 
                 BorderBrush="#87CEFA" BorderThickness="2" Margin="0,0,5,0" ClipToBounds="True">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
-                <Button Content="📊" ToolTip="Stats" Style="{StaticResource DrawerButtonStyle}" Click="Stats_Click"/>
-                <Button Content="🥘" ToolTip="Feed" Style="{StaticResource DrawerButtonStyle}" Click="Feed_Click"/>
-                <Button Content="🧹" ToolTip="Clean" Style="{StaticResource DrawerButtonStyle}" Click="Clean_Click"/>
-                <Button Content="📍" ToolTip="Call to Mouse" Style="{StaticResource DrawerButtonStyle}" Click="Call_Click"/>
-                <Button Content="⚙️" ToolTip="Settings" Style="{StaticResource DrawerButtonStyle}" Click="Settings_Click"/>
+                <Button Tag="{StaticResource Icon.Stats}" ToolTip="Stats" Style="{StaticResource DrawerButtonStyle}" Click="Stats_Click"/>
+                <Button Tag="{StaticResource Icon.Food}" ToolTip="Feed" Style="{StaticResource DrawerButtonStyle}" Click="Feed_Click"/>
+                <Button Tag="{StaticResource Icon.Clean}" ToolTip="Clean" Style="{StaticResource DrawerButtonStyle}" Click="Clean_Click"/>
+                <Button Tag="{StaticResource Icon.Call}" ToolTip="Call to Mouse" Style="{StaticResource DrawerButtonStyle}" Click="Call_Click"/>
+                <Button Tag="{StaticResource Icon.Settings}" ToolTip="Settings" Style="{StaticResource DrawerButtonStyle}" Click="Settings_Click"/>
             </StackPanel>
         </Border>
 
         <!-- Toggle Button -->
-        <Button Name="DrawerToggle" Content="🐾" Width="50" Height="50" FontSize="20"
-                Style="{StaticResource DrawerButtonStyle}" Click="DrawerToggle_Click"/>
+        <Button Name="DrawerToggle" Tag="{StaticResource Icon.Paw}" Style="{StaticResource ToggleButtonStyle}" Click="DrawerToggle_Click"/>
     </StackPanel>
 </UserControl>
