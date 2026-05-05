@@ -24,6 +24,12 @@ namespace DesktopPal
         private System.Windows.Forms.NotifyIcon _notifyIcon;
         private WorldWindow _world;
 
+        // 3/4 Perspective Bounds
+        private double _perspectiveTop = 200; // Sky limit
+        private double _perspectiveBottom;
+        private double _minScale = 0.4;
+        private double _maxScale = 1.0;
+
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
@@ -40,6 +46,8 @@ namespace DesktopPal
         {
             InitializeComponent();
             
+            _perspectiveBottom = SystemParameters.PrimaryScreenHeight - 100;
+
             _world = new WorldWindow();
             _world.Show();
 
@@ -147,16 +155,28 @@ namespace DesktopPal
             double x = Canvas.GetLeft(Pet);
             double y = Canvas.GetTop(Pet);
 
-            _velocity.Y += _gravity;
+            // Gravity only if pet is far from ground and not "walking" in depth
+            // We simulate 3/4 by treating Y as depth, not just height.
+            // But if pet is "high" in 2D space, it should fall to the nearest "depth floor".
             
-            if (DateTime.Now - _lastWanderChange > TimeSpan.FromSeconds(_random.Next(5, 15)))
+            if (DateTime.Now - _lastWanderChange > TimeSpan.FromSeconds(_random.Next(3, 10)))
             {
-                _velocity.X = _random.NextDouble() * 2 - 1;
+                _velocity.X = _random.NextDouble() * 4 - 2;
+                _velocity.Y = _random.NextDouble() * 2 - 1; // Depth movement
                 _lastWanderChange = DateTime.Now;
             }
 
             x += _velocity.X;
             y += _velocity.Y;
+
+            // Facing
+            if (_velocity.X != 0) Pet.SetFacing(_velocity.X < 0);
+
+            // 3/4 Perspective Scaling
+            double depthPercent = (y - _perspectiveTop) / (_perspectiveBottom - _perspectiveTop);
+            depthPercent = Math.Clamp(depthPercent, 0, 1);
+            double scale = _minScale + (_maxScale - _minScale) * depthPercent;
+            Pet.SetDepthScale(scale);
 
             // Smart Layering: Check if pet is behind active window
             IntPtr foregroundHwnd = GetForegroundWindow();
@@ -188,8 +208,9 @@ namespace DesktopPal
                 }
             }
 
-            double floor = SystemParameters.PrimaryScreenHeight - Pet.ActualHeight - 40;
-            if (y > floor) { y = floor; _velocity.Y = 0; }
+            // Screen Bounds (Perspective)
+            if (y < _perspectiveTop) { y = _perspectiveTop; _velocity.Y *= -1; }
+            if (y > _perspectiveBottom) { y = _perspectiveBottom; _velocity.Y *= -1; }
             if (x < 0) { x = 0; _velocity.X *= -1; }
             if (x > SystemParameters.PrimaryScreenWidth - Pet.ActualWidth) { x = SystemParameters.PrimaryScreenWidth - Pet.ActualWidth; _velocity.X *= -1; }
 
@@ -204,7 +225,7 @@ namespace DesktopPal
                 _isDragging = true;
                 _dragOffset = e.GetPosition(Pet);
                 Pet.CaptureMouse();
-                this.Topmost = true; // Always bring to front when touched
+                this.Topmost = true; 
             }
             else if (e.ChangedButton == MouseButton.Right)
             {

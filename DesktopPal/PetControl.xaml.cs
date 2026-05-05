@@ -40,6 +40,8 @@ namespace DesktopPal
             {
                 LeftEye.Visibility = Visibility.Collapsed;
                 RightEye.Visibility = Visibility.Collapsed;
+                LeftEyeWhite.Visibility = Visibility.Collapsed;
+                RightEyeWhite.Visibility = Visibility.Collapsed;
                 LeftEmote.Visibility = Visibility.Visible;
                 RightEmote.Visibility = Visibility.Visible;
             }
@@ -47,6 +49,8 @@ namespace DesktopPal
             {
                 LeftEye.Visibility = Visibility.Visible;
                 RightEye.Visibility = Visibility.Visible;
+                LeftEyeWhite.Visibility = Visibility.Visible;
+                RightEyeWhite.Visibility = Visibility.Visible;
                 LeftEmote.Visibility = Visibility.Collapsed;
                 RightEmote.Visibility = Visibility.Collapsed;
             }
@@ -66,7 +70,20 @@ namespace DesktopPal
                 SetEmote(false);
             }
             
-            PetBody.Fill = State.IsHatched ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.White;
+            // Apply hatched color
+            BodyPath.Fill = State.IsHatched ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(178, 255, 178)) : System.Windows.Media.Brushes.White;
+        }
+
+        public void SetFacing(bool faceLeft)
+        {
+            // Simple flip for 3/4 perspective
+            PetVisualRoot.RenderTransform = new System.Windows.Media.ScaleTransform(faceLeft ? -1 : 1, 1, 50, 50);
+        }
+
+        public void SetDepthScale(double scale)
+        {
+            DepthScale.ScaleX = scale;
+            DepthScale.ScaleY = scale;
         }
 
         public void ToggleStatus()
@@ -111,7 +128,5 @@ namespace DesktopPal
             State.Experience += 2;
             UpdateVisuals();
         }
-
-        public void SetColor(System.Windows.Media.Brush color) => PetBody.Fill = color;
     }
 }
