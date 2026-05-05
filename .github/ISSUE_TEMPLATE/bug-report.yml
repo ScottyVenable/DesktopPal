@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible problem in the current DesktopPal prototype
+title: "[Bug]: "
+labels:
+  - type:bug
+  - status:needs-validation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the current behavior as it exists today. Do not report roadmap features as bugs unless they are partially implemented in the repository.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: List the exact steps to reproduce the issue.
+      placeholder: |
+        1. Launch DesktopPal
+        2. Open ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Windows version, .NET SDK/runtime details, and whether LM Studio was running.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Logs, screenshots, or related issue links.

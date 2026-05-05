@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: DesktopPal contributing guide
+    url: https://github.com/ScottyVenable/DesktopPal/blob/main/CONTRIBUTING.md
+    about: Review issue standards, labels, milestones, and project workflow before filing.

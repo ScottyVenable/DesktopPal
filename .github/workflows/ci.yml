@@ -1,0 +1,73 @@
+name: CI
+
+# Initial restore/build/test workflow for DesktopPal (issue #22).
+# DesktopPal is a Windows-only WPF app targeting net10.0-windows, so all
+# jobs run on windows-latest. No solution file exists yet, so the
+# project file is used as the build target.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Restore / Build / Test (Windows, .NET 10)
+    runs-on: windows-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      PROJECT_PATH: DesktopPal/DesktopPal.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          include-prerelease: true
+
+      - name: Show .NET info
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.PROJECT_PATH }} -p:EnableWindowsTargeting=true --configuration Release --no-restore /bl:build.binlog
+
+      - name: Discover test projects
+        id: tests
+        shell: pwsh
+        run: |
+          $testProjects = Get-ChildItem -Path . -Recurse -Include *.Tests.csproj, *.Test.csproj -ErrorAction SilentlyContinue
+          if ($testProjects) {
+            "found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Found test projects:"
+            $testProjects | ForEach-Object { Write-Host "  $($_.FullName)" }
+          } else {
+            "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "No test projects found - skipping test step. (Tracked under issue #22; tests will be added later.)"
+          }
+
+      - name: Test
+        if: steps.tests.outputs.found == 'true'
+        run: dotnet test ${{ env.PROJECT_PATH }} -p:EnableWindowsTargeting=true --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build.binlog
+            **/TestResults/**
+          if-no-files-found: ignore
+          retention-days: 7

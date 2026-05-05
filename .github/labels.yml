@@ -1,0 +1,102 @@
+- name: bug
+  color: d73a4a
+  description: Something is not working
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+- name: help wanted
+  color: 008672
+  description: Extra attention is needed
+- name: question
+  color: d876e3
+  description: Further information is requested
+- name: invalid
+  color: e4e669
+  description: This does not appear to be a valid issue
+- name: duplicate
+  color: cfd3d7
+  description: This issue or pull request already exists
+- name: wontfix
+  color: ffffff
+  description: This will not be worked on
+- name: type:epic
+  color: 5319e7
+  description: Parent roadmap issue coordinating a body of work
+- name: type:feature
+  color: 0e8a16
+  description: Net new product or engineering capability
+- name: type:bug
+  color: d73a4a
+  description: Defect affecting current behavior
+- name: type:tech-debt
+  color: b60205
+  description: Refactor or structural improvement without direct user-facing scope
+- name: type:docs
+  color: 0366d6
+  description: Documentation or process update
+- name: type:test
+  color: 1d76db
+  description: Automated or manual validation coverage
+- name: type:release
+  color: fbca04
+  description: Packaging, release, or distribution work
+- name: priority:p0
+  color: b60205
+  description: Must happen first or blocks roadmap progress
+- name: priority:p1
+  color: d93f0b
+  description: High-value work for the active phase
+- name: priority:p2
+  color: fbca04
+  description: Important but not phase-blocking
+- name: priority:p3
+  color: 0e8a16
+  description: Nice to have or later-phase work
+- name: status:ready
+  color: 0e8a16
+  description: Scoped and ready to implement
+- name: status:in-progress
+  color: fbca04
+  description: Work has started and is actively being implemented
+- name: status:blocked
+  color: b60205
+  description: Waiting on another decision or dependency
+- name: status:needs-design
+  color: fbca04
+  description: Needs design or scoping before implementation
+- name: status:needs-validation
+  color: 5319e7
+  description: Needs reproduction or validation detail
+- name: area:architecture
+  color: 0052cc
+  description: Runtime, simulation, and structural boundaries
+- name: area:ui-ux
+  color: 1d76db
+  description: User experience, layout, controls, and presentation
+- name: area:ai
+  color: 6f42c1
+  description: AI behavior, prompts, memory, or model integration
+- name: area:content
+  color: c5def5
+  description: Progression, authored dialogue, rewards, and content systems
+- name: area:integrations
+  color: 006b75
+  description: Desktop, OS, watcher, and external service integrations
+- name: area:world
+  color: 0e8a16
+  description: Persistent environment, decorations, and world systems
+- name: area:quality
+  color: c2e0c6
+  description: Test coverage, diagnostics, and quality discipline
+- name: area:docs
+  color: 0366d6
+  description: Repository documentation and guidance
+- name: area:repo
+  color: 5319e7
+  description: Repository management, process, and planning structure
+- name: area:platform
+  color: 5319e7
+  description: Long-term extensibility, multi-pet, and platform foundations
