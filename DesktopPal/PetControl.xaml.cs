@@ -1,7 +1,6 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -12,6 +11,7 @@ namespace DesktopPal
         public PetState State { get; private set; }
         public AIService AIService { get; private set; }
         private DispatcherTimer _chatTimer;
+        private DispatcherTimer _emoteTimer;
 
         public PetControl()
         {
@@ -22,6 +22,10 @@ namespace DesktopPal
             _chatTimer = new DispatcherTimer();
             _chatTimer.Interval = TimeSpan.FromSeconds(8);
             _chatTimer.Tick += (s, e) => { ChatBubble.Visibility = Visibility.Collapsed; _chatTimer.Stop(); };
+
+            _emoteTimer = new DispatcherTimer();
+            _emoteTimer.Interval = TimeSpan.FromSeconds(2);
+            _emoteTimer.Tick += (s, e) => { SetEmote(false); _emoteTimer.Stop(); };
 
             UpdateVisuals();
         }
@@ -65,18 +69,12 @@ namespace DesktopPal
                 StatusText.Text = "I'm hungry!";
                 SetEmote(true);
             }
-            else
-            {
-                SetEmote(false);
-            }
             
-            // Apply hatched color
             BodyPath.Fill = State.IsHatched ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(178, 255, 178)) : System.Windows.Media.Brushes.White;
         }
 
         public void SetFacing(bool faceLeft)
         {
-            // Simple flip for 3/4 perspective
             PetVisualRoot.RenderTransform = new System.Windows.Media.ScaleTransform(faceLeft ? -1 : 1, 1, 50, 50);
         }
 
@@ -93,9 +91,8 @@ namespace DesktopPal
                 : Visibility.Visible;
         }
 
-        private async void ProcessChat()
+        public async void ProcessChat(string input)
         {
-            string input = ChatInput.Text;
             if (string.IsNullOrWhiteSpace(input)) return;
             
             ChatInput.Text = "";
@@ -108,25 +105,35 @@ namespace DesktopPal
             State.Happiness = Math.Min(100, State.Happiness + 5);
         }
 
-        private void Say_Click(object sender, RoutedEventArgs e) => ProcessChat();
-
-        private void ChatInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Key == System.Windows.Input.Key.Enter) ProcessChat();
-        }
-
-        private void Feed_Click(object sender, RoutedEventArgs e)
+        public void Feed()
         {
             State.Hunger = Math.Min(100, State.Hunger + 20);
             State.Experience += 5;
             UpdateVisuals();
+            ShowChat("Yum! Thank you!");
         }
+
+        public void PetMe()
+        {
+            State.Happiness = Math.Min(100, State.Happiness + 10);
+            State.Experience += 1;
+            SetEmote(true);
+            _emoteTimer.Start();
+            ShowChat(OfflineBrain.GetRandomPhrase("Petting"));
+        }
+
+        private void Say_Click(object sender, RoutedEventArgs e) => ProcessChat(ChatInput.Text);
+
+        private void ChatInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter) ProcessChat(ChatInput.Text);
+        }
+
+        private void Feed_Click(object sender, RoutedEventArgs e) => Feed();
 
         private void Clean_Click(object sender, RoutedEventArgs e)
         {
-            State.Hygiene = 100;
-            State.Experience += 2;
-            UpdateVisuals();
+            ((MainWindow)Window.GetWindow(this)).CleanAll();
         }
     }
 }

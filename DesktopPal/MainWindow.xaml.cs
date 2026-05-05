@@ -13,7 +13,6 @@ namespace DesktopPal
     {
         public PetControl Pet { get; private set; }
         private System.Windows.Point _velocity = new System.Windows.Point(2, 0);
-        private double _gravity = 0.5;
         private bool _isDragging = false;
         private System.Windows.Point _dragOffset;
         private Random _random = new Random();
@@ -24,11 +23,7 @@ namespace DesktopPal
         private System.Windows.Forms.NotifyIcon _notifyIcon;
         private WorldWindow _world;
 
-        // 3/4 Perspective Bounds
-        private double _perspectiveTop = 200; // Sky limit
-        private double _perspectiveBottom;
-        private double _minScale = 0.4;
-        private double _maxScale = 1.0;
+        private System.Windows.Point? _targetPosition = null;
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
@@ -46,10 +41,9 @@ namespace DesktopPal
         {
             InitializeComponent();
             
-            _perspectiveBottom = SystemParameters.PrimaryScreenHeight - 100;
-
             _world = new WorldWindow();
             _world.Show();
+            _world.MouseDown += World_MouseDown;
 
             Pet = new PetControl();
             MainCanvas.Children.Add(Pet);
@@ -92,14 +86,9 @@ namespace DesktopPal
             contextMenu.Items.Add("Exit", null, (s, e) => { _world.Close(); System.Windows.Application.Current.Shutdown(); });
 
             _notifyIcon.ContextMenuStrip = contextMenu;
-            _notifyIcon.DoubleClick += (s, e) => 
-            {
-                this.Show();
-                this.WindowState = WindowState.Maximized;
-            };
         }
 
-        private void ShowSettings()
+        public void ShowSettings()
         {
             var settings = new SettingsWindow();
             settings.Owner = this;
@@ -111,15 +100,27 @@ namespace DesktopPal
             Pet.Visibility = Pet.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public void CleanAll()
+        {
+            _world.WorldCanvas.Children.Clear();
+            Pet.State.Hygiene = 100;
+            Pet.ShowChat("All clean! Thank you!");
+        }
+
+        public void CallPetToMouse()
+        {
+            var pos = System.Windows.Forms.Control.MousePosition;
+            _targetPosition = new System.Windows.Point(pos.X - 50, pos.Y - 50);
+            Pet.ShowChat(OfflineBrain.GetRandomPhrase("Calling"));
+        }
+
         private async void HandleLetterReceived(string fileName, string content)
         {
             Dispatcher.Invoke(async () => 
             {
                 Pet.ShowChat($"*reading {fileName}*");
-                
                 string reply = await Pet.AIService.ChatAsync($"I received a letter called {fileName}. It says: {content}. I should write a reply.");
                 Pet.ShowChat(reply);
-                
                 _sys.WriteLetterBack(fileName, reply);
             });
         }
@@ -155,67 +156,67 @@ namespace DesktopPal
             double x = Canvas.GetLeft(Pet);
             double y = Canvas.GetTop(Pet);
 
-            // Gravity only if pet is far from ground and not "walking" in depth
-            // We simulate 3/4 by treating Y as depth, not just height.
-            // But if pet is "high" in 2D space, it should fall to the nearest "depth floor".
-            
-            if (DateTime.Now - _lastWanderChange > TimeSpan.FromSeconds(_random.Next(3, 10)))
+            if (_targetPosition.HasValue)
+            {
+                double dx = _targetPosition.Value.X - x;
+                double dy = _targetPosition.Value.Y - y;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                if (dist < 5)
+                {
+                    _targetPosition = null;
+                }
+                else
+                {
+                    _velocity.X = (dx / dist) * 5;
+                    _velocity.Y = (dy / dist) * 5;
+                }
+            }
+            else if (DateTime.Now - _lastWanderChange > TimeSpan.FromSeconds(_random.Next(3, 10)))
             {
                 _velocity.X = _random.NextDouble() * 4 - 2;
-                _velocity.Y = _random.NextDouble() * 2 - 1; // Depth movement
+                _velocity.Y = _random.NextDouble() * 4 - 2; 
                 _lastWanderChange = DateTime.Now;
             }
 
             x += _velocity.X;
             y += _velocity.Y;
 
-            // Facing
             if (_velocity.X != 0) Pet.SetFacing(_velocity.X < 0);
 
-            // 3/4 Perspective Scaling
-            double depthPercent = (y - _perspectiveTop) / (_perspectiveBottom - _perspectiveTop);
-            depthPercent = Math.Clamp(depthPercent, 0, 1);
-            double scale = _minScale + (_maxScale - _minScale) * depthPercent;
-            Pet.SetDepthScale(scale);
-
-            // Smart Layering: Check if pet is behind active window
+            // Smart Layering
             IntPtr foregroundHwnd = GetForegroundWindow();
             if (GetWindowRect(foregroundHwnd, out RECT rect))
             {
                 bool isUnderWindow = x > rect.Left && x < rect.Right && y > rect.Top && y < rect.Bottom;
-                if (isUnderWindow && _random.Next(0, 100) < 5) // 5% chance to "sneak" behind
-                {
-                    this.Topmost = false;
-                }
-                else if (!isUnderWindow)
-                {
-                    this.Topmost = true;
-                }
+                if (isUnderWindow && _random.Next(0, 100) < 5) this.Topmost = false;
+                else if (!isUnderWindow) this.Topmost = true;
             }
 
-            // Chance to plant a decoration or poop
             if (Pet.State.IsHatched)
             {
-                if (_random.Next(0, 5000) == 0) // Tree/Flower
-                {
-                    var type = _random.Next(0, 2) == 0 ? "Tree" : "Flower";
-                    _world.AddObject(new Decoration(type), x, y + 40);
-                }
-                else if (_random.Next(0, 8000) == 0) // Poop
+                if (_random.Next(0, 5000) == 0) _world.AddObject(new Decoration(_random.Next(0, 2) == 0 ? "Tree" : "Flower"), x, y + 40);
+                else if (_random.Next(0, 8000) == 0) 
                 {
                     _world.AddObject(new Decoration("Poop"), x, y + 60);
                     Pet.State.Hygiene = Math.Max(0, Pet.State.Hygiene - 10);
                 }
             }
 
-            // Screen Bounds (Perspective)
-            if (y < _perspectiveTop) { y = _perspectiveTop; _velocity.Y *= -1; }
-            if (y > _perspectiveBottom) { y = _perspectiveBottom; _velocity.Y *= -1; }
+            if (y < 0) { y = 0; _velocity.Y *= -1; }
+            if (y > SystemParameters.PrimaryScreenHeight - 100) { y = SystemParameters.PrimaryScreenHeight - 100; _velocity.Y *= -1; }
             if (x < 0) { x = 0; _velocity.X *= -1; }
-            if (x > SystemParameters.PrimaryScreenWidth - Pet.ActualWidth) { x = SystemParameters.PrimaryScreenWidth - Pet.ActualWidth; _velocity.X *= -1; }
+            if (x > SystemParameters.PrimaryScreenWidth - 100) { x = SystemParameters.PrimaryScreenWidth - 100; _velocity.X *= -1; }
 
             Canvas.SetLeft(Pet, x);
             Canvas.SetTop(Pet, y);
+        }
+
+        private void World_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Right)
+            {
+                // Custom context menu logic would go here if needed
+            }
         }
 
         private void Pet_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -229,7 +230,7 @@ namespace DesktopPal
             }
             else if (e.ChangedButton == MouseButton.Right)
             {
-                Pet.ToggleStatus();
+                Pet.PetMe();
             }
         }
 
