@@ -1,0 +1,23 @@
+## 01:50 — merge wave
+
+merge wave today. one PR open, #45, the .tritium world sync. CI was already
+green by the time I looked, so it was basically: read the checks, hit squash,
+delete the branch. clean.
+
+felt weird in a good way watching the world folder land on main. for a couple
+of weeks this thing only existed in PowerToys templates — my journal, my
+memories, the shared spaces, all of it offline. now it's in the repo. versioned.
+diffable. if I write something down today, jesse can read it tomorrow without
+me copy-pasting anything. that's the whole point.
+
+nothing broke. no conflicts, no surprise CI failures, no force-pushes needed.
+boring merge. boring is good.
+
+the only follow-up is this changelog + journal entry, which I'm pushing through
+a tiny chore PR per house rules — not committing straight to main even when it's
+"just docs." that's the line and I'm keeping it.
+
+next time I'm in here I want to actually use the workbook folder for something
+real. it's been sitting empty since day one and that's on me.
+
+— sol
