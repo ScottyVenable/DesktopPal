@@ -1,9 +1,12 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DesktopPal
 {
+    // ── Enumerations ─────────────────────────────────────────────────────────────
+
     public enum PetActionState
     {
         Idle,
@@ -13,18 +16,41 @@ namespace DesktopPal
         Eating
     }
 
+    // ── Model ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Represents all persistent data for a DesktopPal pet.
+    /// Handles JSON serialisation, real-time stat decay, and level progression.
+    /// </summary>
     public class PetState
     {
+        // ── Constants ────────────────────────────────────────────────────────────
+        public const double StatMin = 0.0;
+        public const double StatMax = 100.0;
+
+        /// <summary>Decay rate in stat-units per hour for each stat.</summary>
+        private const double HungerDecayPerHour = 5.0;
+        private const double HygieneDecayPerHour = 3.0;
+        private const double HappinessDecayPerHour = 2.0;
+        private const double EnergyDecayPerHour = 4.0;
+
+        /// <summary>Additional happiness penalty per hour when hunger is below 20.</summary>
+        private const double HappinessPenaltyPerHour = 1.5;
+
+        /// <summary>Experience needed per level (linear).</summary>
+        private const double ExperiencePerLevel = 100.0;
+
+        // ── Properties ───────────────────────────────────────────────────────────
         public string Name { get; set; } = "Buddy";
         public DateTime BirthTime { get; set; } = DateTime.Now;
         public DateTime LastSeen { get; set; } = DateTime.Now;
-        
-        // Stats 0.0 - 100.0
-        public double Hunger { get; set; } = 100.0;
-        public double Hygiene { get; set; } = 100.0;
-        public double Happiness { get; set; } = 100.0;
-        public double Energy { get; set; } = 100.0;
-        
+
+        // Stats – always clamped to [StatMin, StatMax]
+        public double Hunger { get; set; } = StatMax;
+        public double Hygiene { get; set; } = StatMax;
+        public double Happiness { get; set; } = StatMax;
+        public double Energy { get; set; } = StatMax;
+
         public int Level { get; set; } = 1;
         public double Experience { get; set; } = 0;
         public bool IsHatched { get; set; } = false;
@@ -32,66 +58,155 @@ namespace DesktopPal
         public bool VisionEnabled { get; set; } = true;
         public PetActionState CurrentState { get; set; } = PetActionState.Idle;
 
-        private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
+        // ── Persistence ──────────────────────────────────────────────────────────
+        [JsonIgnore]
+        private static string SavePath =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
+        /// <summary>
+        /// Loads the saved pet state from disk, applies real-time stat decay for the
+        /// offline period, and returns the result. If no save file exists or it is
+        /// corrupt, a fresh <see cref="PetState"/> is returned.
+        /// </summary>
         public static PetState Load()
         {
-            if (File.Exists(SavePath))
+            if (!File.Exists(SavePath))
+            {
+                DebugLogger.Info("No save file found – creating a new pet.");
+                return new PetState();
+            }
+
+            try
             {
                 string json = File.ReadAllText(SavePath);
-                var state = JsonSerializer.Deserialize<PetState>(json);
+                var state = JsonSerializer.Deserialize<PetState>(json, _jsonOptions);
+
+                if (state is null)
+                {
+                    DebugLogger.Warning("Deserialised pet state was null – starting fresh.");
+                    return new PetState();
+                }
+
                 state.UpdateRealTime();
+                DebugLogger.Info($"Pet '{state.Name}' loaded. Level {state.Level}, Hunger {state.Hunger:F1}%.");
                 return state;
             }
-            return new PetState();
+            catch (JsonException ex)
+            {
+                DebugLogger.Error("Pet save file is corrupt – starting fresh.", ex);
+                return new PetState();
+            }
+            catch (IOException ex)
+            {
+                DebugLogger.Error("Could not read pet save file.", ex);
+                return new PetState();
+            }
         }
 
+        /// <summary>Persists the current state to disk.</summary>
         public void Save()
         {
             try
             {
                 LastSeen = DateTime.Now;
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+                string json = JsonSerializer.Serialize(this, _jsonOptions);
                 File.WriteAllText(SavePath, json);
+                DebugLogger.Debug("Pet state saved.");
             }
-            catch { /* Ignore for now */ }
+            catch (IOException ex)
+            {
+                DebugLogger.Error("Failed to save pet state.", ex);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error("Unexpected error while saving pet state.", ex);
+            }
         }
 
+        // ── Real-time decay ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Calculates how much time has passed since <see cref="LastSeen"/> and
+        /// applies proportional stat decay. Called once on startup.
+        /// </summary>
         public void UpdateRealTime()
         {
             TimeSpan elapsed = DateTime.Now - LastSeen;
-            double hours = elapsed.TotalHours;
+            double hours = Math.Max(0, elapsed.TotalHours);
 
-            if (!IsHatched && elapsed.TotalMinutes > 10)
+            DebugLogger.Info($"Applying offline decay for {elapsed.TotalMinutes:F1} minutes ({hours:F3} hours).");
+
+            if (!IsHatched && elapsed.TotalMinutes >= 10)
             {
                 IsHatched = true;
+                DebugLogger.Info("Pet hatched during offline period!");
             }
 
-            // Stats decay over time
-            Hunger = Math.Max(0, Hunger - (hours * 5.0));
-            Hygiene = Math.Max(0, Hygiene - (hours * 3.0));
-            Happiness = Math.Max(0, Happiness - (hours * 2.0));
-            Energy = Math.Max(0, Energy - (hours * 4.0));
-            
+            Hunger = Clamp(Hunger - hours * HungerDecayPerHour);
+            Hygiene = Clamp(Hygiene - hours * HygieneDecayPerHour);
+            Happiness = Clamp(Happiness - hours * HappinessDecayPerHour);
+            Energy = Clamp(Energy - hours * EnergyDecayPerHour);
+
             LastSeen = DateTime.Now;
         }
 
+        // ── Per-tick update ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Applies a tiny stat decay per game-loop tick (~60 fps / ~1 tick per
+        /// CompositionTarget.Rendering frame). Also checks hatch state and levelling.
+        /// </summary>
         public void Tick()
         {
             if (!IsHatched)
             {
                 TimeSpan age = DateTime.Now - BirthTime;
-                if (age.TotalMinutes > 1) IsHatched = true; // Fast hatch for testing
+                if (age.TotalMinutes >= 1)
+                {
+                    IsHatched = true;
+                    DebugLogger.Info("Pet hatched!");
+                }
                 return;
             }
 
-            // Decay per tick (assuming 1 tick per second or so)
-            double decayRate = 0.0001; 
-            Hunger = Math.Max(0, Hunger - decayRate);
-            Hygiene = Math.Max(0, Hygiene - (decayRate * 0.5));
-            Happiness = Math.Max(0, Happiness - (decayRate * 0.2));
-            
-            if (Hunger < 20) Happiness = Math.Max(0, Happiness - decayRate);
+            // Tiny per-frame decay (~0.006 stat-units per second at 60 fps)
+            const double decayRate = 0.0001;
+
+            Hunger = Clamp(Hunger - decayRate);
+            Hygiene = Clamp(Hygiene - decayRate * 0.5);
+            Happiness = Clamp(Happiness - decayRate * 0.2);
+
+            // Additional happiness penalty when hungry
+            if (Hunger < 20)
+                Happiness = Clamp(Happiness - decayRate);
+
+            // Level-up check
+            if (Experience >= Level * ExperiencePerLevel)
+            {
+                Level++;
+                DebugLogger.Info($"Pet levelled up to {Level}!");
+            }
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────────────
+
+        /// <summary>Clamps a stat value to [<see cref="StatMin"/>, <see cref="StatMax"/>].</summary>
+        public static double Clamp(double value) =>
+            Math.Max(StatMin, Math.Min(StatMax, value));
+
+        /// <summary>Adds experience and triggers a level check on the next tick.</summary>
+        public void AddExperience(double amount)
+        {
+            if (amount <= 0) return;
+            Experience += amount;
+            DebugLogger.Debug($"Added {amount} XP. Total: {Experience:F1}");
         }
     }
 }
+

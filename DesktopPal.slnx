@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DesktopPal.Tests/DesktopPal.Tests.csproj" />
+  <Project Path="DesktopPal/DesktopPal.csproj" />
+</Solution>

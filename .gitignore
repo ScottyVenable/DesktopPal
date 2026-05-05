@@ -4,5 +4,8 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+
+# DesktopPal runtime files
 pet_state.json
 desktop_pal_vision.png
+*.log
