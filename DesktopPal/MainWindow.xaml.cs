@@ -34,6 +34,14 @@ namespace DesktopPal
         [DllImport("user32.dll")]
         private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+        [DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        private const int HOTKEY_ID = 9000;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT { public int Left, Top, Right, Bottom; }
 
@@ -70,6 +78,35 @@ namespace DesktopPal
             _visionTimer.Start();
 
             InitializeTray();
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            var hwnd = new WindowInteropHelper(this).Handle;
+            RegisterGlobalHotkey();
+            
+            var source = HwndSource.FromHwnd(hwnd);
+            source.AddHook(HwndHook);
+        }
+
+        public void RegisterGlobalHotkey()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            UnregisterHotKey(hwnd, HOTKEY_ID);
+            // HotkeyModifier: MOD_CONTROL (2) | MOD_ALT (1) = 3
+            RegisterHotKey(hwnd, HOTKEY_ID, (uint)Pet.State.HotkeyModifier, (uint)Pet.State.HotkeyCode);
+        }
+
+        private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_HOTKEY = 0x0312;
+            if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
+            {
+                CallPetToMouse();
+                handled = true;
+            }
+            return IntPtr.Zero;
         }
 
         private void InitializeTray()

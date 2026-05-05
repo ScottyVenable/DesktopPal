@@ -32,6 +32,9 @@ namespace DesktopPal
         public bool VisionEnabled { get; set; } = true;
         public PetActionState CurrentState { get; set; } = PetActionState.Idle;
 
+        public int HotkeyModifier { get; set; } = 3; // Default: Control + Alt (MOD_CONTROL | MOD_ALT)
+        public int HotkeyCode { get; set; } = 0x42;   // Default: 'B'
+
         private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 
         public static PetState Load()
