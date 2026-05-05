@@ -74,27 +74,42 @@ namespace DesktopPal
         // gardening loop will deserialize this as a fresh empty WorldState.
         public WorldState World { get; set; } = new WorldState();
 
-        private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
+        // Save path now resolves under %LOCALAPPDATA%\DesktopPal\ via the
+        // Paths helper. The previous location (next to the .exe) is no longer
+        // writable once the app is packaged into Program Files / MSIX. Paths
+        // also runs a one-shot legacy migration on first use. Path-only
+        // change in this revision; JSON schema is unchanged.
+        private static string SavePath => Paths.PetStatePath;
 
         public static PetState Load()
         {
+            Paths.EnsureInitialized();
+
             if (File.Exists(SavePath))
             {
-                string json = File.ReadAllText(SavePath);
-                var state = JsonSerializer.Deserialize<PetState>(json);
-                if (state == null)
+                try
                 {
+                    string json = File.ReadAllText(SavePath);
+                    var state = JsonSerializer.Deserialize<PetState>(json);
+                    if (state == null)
+                    {
+                        return new PetState();
+                    }
+
+                    // Backwards-compat: older saves predate the World field.
+                    if (state.World == null)
+                    {
+                        state.World = new WorldState();
+                    }
+
+                    state.UpdateRealTime();
+                    return state;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Error("PetState", "Failed to load pet_state.json; starting fresh.", ex);
                     return new PetState();
                 }
-
-                // Backwards-compat: older saves predate the World field.
-                if (state.World == null)
-                {
-                    state.World = new WorldState();
-                }
-
-                state.UpdateRealTime();
-                return state;
             }
             return new PetState();
         }
@@ -103,11 +118,15 @@ namespace DesktopPal
         {
             try
             {
+                Paths.EnsureInitialized();
                 LastSeen = DateTime.Now;
                 string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(SavePath, json);
             }
-            catch { /* Ignore for now */ }
+            catch (Exception ex)
+            {
+                Logging.Warn("PetState", "Save failed", ex);
+            }
         }
 
         public void UpdateRealTime()

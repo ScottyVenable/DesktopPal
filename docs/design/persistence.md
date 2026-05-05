@@ -126,6 +126,18 @@ Migration of legacy saves: on first launch after this change, if a
 exists, copy it forward and rename the legacy file to
 `pet_state.json.migrated`. The legacy file is never read again.
 
+**Implementation status (path-only migration):** a first-pass version of
+the legacy migration shipped in PR #48 (branch
+`feat/sol-persistence-localappdata`, closes #44). It copies legacy
+`pet_state.json` from next to the .exe to`%LOCALAPPDATA%\DesktopPal\pet_state.json` (the
+flat path used by the current schema-1 save) and best-effort deletes the
+legacy file on success. Migration is wrapped in try/catch and logs every
+outcome via `Logging`. The full design above — `saves\pet.json` plus
+`.bak` / `.tmp` / `quarantine\` layout, schema-version wrapper, atomic
+write, and recovery flow — is still pending and tracked in the
+persistence epic; this PR is a path-only move so packaged installs can
+write at all.
+
 ### File format and schema version
 
 Every persisted JSON file gains a wrapper:
