@@ -30,7 +30,10 @@
         <Viewbox Name="PetVisualRoot" Canvas.Left="43" Canvas.Top="92"
                  Width="64" Height="64" RenderTransformOrigin="0.5,0.5">
             <Viewbox.RenderTransform>
-                <ScaleTransform x:Name="FacingScale" ScaleX="1" ScaleY="1"/>
+                <TransformGroup>
+                    <ScaleTransform x:Name="FacingScale" ScaleX="1" ScaleY="1"/>
+                    <TranslateTransform x:Name="IdleBob" X="0" Y="0"/>
+                </TransformGroup>
             </Viewbox.RenderTransform>
             <Canvas Width="100" Height="100">
 

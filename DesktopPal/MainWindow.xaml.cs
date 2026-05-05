@@ -83,7 +83,31 @@ namespace DesktopPal
             _companionWindow = new CompanionWindow(this, Pet);
             InitializeTray();
 
+            // First-run onboarding (issue #20). Show after the main window
+            // has rendered so users see the pet appear, then receive the
+            // welcome card. Gated by PetState.HasCompletedOnboarding.
+            ContentRendered += MainWindow_ShowOnboardingIfNeeded;
+
             Logging.Info("MainWindow", "Startup complete.");
+        }
+
+        private void MainWindow_ShowOnboardingIfNeeded(object? sender, EventArgs e)
+        {
+            ContentRendered -= MainWindow_ShowOnboardingIfNeeded;
+            if (Pet?.State == null || Pet.State.HasCompletedOnboarding) return;
+
+            try
+            {
+                var onboarding = new OnboardingWindow(Pet.State) { Owner = this };
+                onboarding.Show();
+            }
+            catch (Exception ex)
+            {
+                Logging.Error("MainWindow", "Failed to show onboarding window.", ex);
+                // Fail-soft: mark complete so we don't loop on this on every launch.
+                Pet.State.HasCompletedOnboarding = true;
+                try { Pet.State.Save(); } catch { /* ignore */ }
+            }
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -357,6 +381,7 @@ namespace DesktopPal
                 _isDragging = true;
                 _dragOffset = e.GetPosition(Pet);
                 Pet.CaptureMouse();
+                Pet.PauseIdleBob();
                 this.Topmost = true;
             }
             else if (e.ChangedButton == MouseButton.Right)
@@ -380,6 +405,7 @@ namespace DesktopPal
             {
                 _isDragging = false;
                 Pet.ReleaseMouseCapture();
+                Pet.ResumeIdleBob();
                 Pet.PetMe();
             }
         }

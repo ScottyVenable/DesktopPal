@@ -35,6 +35,11 @@ namespace DesktopPal
         public int HotkeyModifier { get; set; } = 3; // Default: Control + Alt (MOD_CONTROL | MOD_ALT)
         public int HotkeyCode { get; set; } = 0x42;   // Default: 'B'
 
+        // First-run gate. Set to true once the user dismisses the onboarding
+        // window. Persisted via Save() so onboarding only appears once per
+        // installation. See issue #20.
+        public bool HasCompletedOnboarding { get; set; } = false;
+
         private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 
         public static PetState Load()
