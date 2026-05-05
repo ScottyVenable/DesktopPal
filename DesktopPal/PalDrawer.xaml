@@ -1,11 +1,11 @@
 <UserControl x:Class="DesktopPal.PalDrawer"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Height="60" Width="Auto" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+             Height="50" Width="Auto" HorizontalAlignment="Right" VerticalAlignment="Bottom">
     <UserControl.Resources>
         <Storyboard x:Key="ExpandDrawer">
             <DoubleAnimation Storyboard.TargetName="DrawerContent" Storyboard.TargetProperty="Width" 
-                             To="250" Duration="0:0:0.4">
+                             To="200" Duration="0:0:0.4">
                 <DoubleAnimation.EasingFunction>
                     <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
                 </DoubleAnimation.EasingFunction>
@@ -21,20 +21,20 @@
         </Storyboard>
     </UserControl.Resources>
     
-    <StackPanel Orientation="Horizontal" Margin="0,0,10,10">
+    <StackPanel Orientation="Horizontal" Margin="0,0,10,5">
         <!-- Main Drawer Area -->
-        <Border Name="DrawerContent" Background="#CCFFFFFF" CornerRadius="20" Width="0" Height="50" 
-                BorderBrush="#87CEFA" BorderThickness="2" Margin="0,0,5,0" ClipToBounds="True">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
-                <Button Tag="{StaticResource Icon.Stats}" ToolTip="Stats" Style="{StaticResource DrawerButtonStyle}" Click="Stats_Click"/>
-                <Button Tag="{StaticResource Icon.Food}" ToolTip="Feed" Style="{StaticResource DrawerButtonStyle}" Click="Feed_Click"/>
-                <Button Tag="{StaticResource Icon.Clean}" ToolTip="Clean" Style="{StaticResource DrawerButtonStyle}" Click="Clean_Click"/>
-                <Button Tag="{StaticResource Icon.Call}" ToolTip="Call to Mouse" Style="{StaticResource DrawerButtonStyle}" Click="Call_Click"/>
-                <Button Tag="{StaticResource Icon.Settings}" ToolTip="Settings" Style="{StaticResource DrawerButtonStyle}" Click="Settings_Click"/>
+        <Border Name="DrawerContent" Background="#CCFFFFFF" CornerRadius="15" Width="0" Height="40" 
+                BorderBrush="#87CEFA" BorderThickness="1.5" Margin="0,0,5,0" ClipToBounds="True">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5,0">
+                <Button Tag="{StaticResource Icon.Stats}" ToolTip="Stats" Style="{StaticResource DrawerButtonStyle}" Click="Stats_Click" Width="32" Height="32"/>
+                <Button Tag="{StaticResource Icon.Food}" ToolTip="Feed" Style="{StaticResource DrawerButtonStyle}" Click="Feed_Click" Width="32" Height="32"/>
+                <Button Tag="{StaticResource Icon.Clean}" ToolTip="Clean" Style="{StaticResource DrawerButtonStyle}" Click="Clean_Click" Width="32" Height="32"/>
+                <Button Tag="{StaticResource Icon.Call}" ToolTip="Call to Mouse" Style="{StaticResource DrawerButtonStyle}" Click="Call_Click" Width="32" Height="32"/>
+                <Button Tag="{StaticResource Icon.Settings}" ToolTip="Settings" Style="{StaticResource DrawerButtonStyle}" Click="Settings_Click" Width="32" Height="32"/>
             </StackPanel>
         </Border>
 
         <!-- Toggle Button -->
-        <Button Name="DrawerToggle" Tag="{StaticResource Icon.Paw}" Style="{StaticResource ToggleButtonStyle}" Click="DrawerToggle_Click"/>
+        <Button Name="DrawerToggle" Tag="{StaticResource Icon.Paw}" Style="{StaticResource ToggleButtonStyle}" Click="DrawerToggle_Click" Width="40" Height="40"/>
     </StackPanel>
 </UserControl>

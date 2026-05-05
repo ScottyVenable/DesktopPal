@@ -34,5 +34,10 @@ namespace DesktopPal
             System.Windows.Controls.Canvas.SetLeft(element, x);
             System.Windows.Controls.Canvas.SetTop(element, y);
         }
+
+        public void RemoveObject(UIElement element)
+        {
+            WorldCanvas.Children.Remove(element);
+        }
     }
 }

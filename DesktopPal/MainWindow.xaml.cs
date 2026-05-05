@@ -94,7 +94,6 @@ namespace DesktopPal
         {
             var hwnd = new WindowInteropHelper(this).Handle;
             UnregisterHotKey(hwnd, HOTKEY_ID);
-            // HotkeyModifier: MOD_CONTROL (2) | MOD_ALT (1) = 3
             RegisterHotKey(hwnd, HOTKEY_ID, (uint)Pet.State.HotkeyModifier, (uint)Pet.State.HotkeyCode);
         }
 
@@ -193,6 +192,13 @@ namespace DesktopPal
             double x = Canvas.GetLeft(Pet);
             double y = Canvas.GetTop(Pet);
 
+            // Dynamic Scaling based on Age
+            // Desktop Icon size approx 48-64 pixels.
+            // Hatching size: 0.5 * 60 = 30px
+            // Max size: 1.0 * 60 = 60px
+            double baseScale = Pet.State.IsHatched ? 1.0 : 0.5;
+            Pet.SetDepthScale(baseScale);
+
             if (_targetPosition.HasValue)
             {
                 double dx = _targetPosition.Value.X - x;
@@ -231,14 +237,15 @@ namespace DesktopPal
 
             if (Pet.State.IsHatched)
             {
-                if (_random.Next(0, 5000) == 0) _world.AddObject(new Decoration(_random.Next(0, 2) == 0 ? "Tree" : "Flower"), x, y + 40);
-                else if (_random.Next(0, 8000) == 0) 
+                // Removed trees and flowers for now.
+                if (_random.Next(0, 8000) == 0) 
                 {
-                    _world.AddObject(new Decoration("Poop"), x, y + 60);
+                    _world.AddObject(new Decoration("Poop"), x, y + 20);
                     Pet.State.Hygiene = Math.Max(0, Pet.State.Hygiene - 10);
                 }
             }
 
+            // Boundary checks
             if (y < 0) { y = 0; _velocity.Y *= -1; }
             if (y > SystemParameters.PrimaryScreenHeight - 100) { y = SystemParameters.PrimaryScreenHeight - 100; _velocity.Y *= -1; }
             if (x < 0) { x = 0; _velocity.X *= -1; }
@@ -252,7 +259,7 @@ namespace DesktopPal
         {
             if (e.ChangedButton == MouseButton.Right)
             {
-                // Custom context menu logic would go here if needed
+                // Reserved for future custom context menu
             }
         }
 
