@@ -1,3 +1,5 @@
+> **Note:** This document is retained as historical reference. The active plan is now [`TRITIUM-PLAN-V2.md`](./TRITIUM-PLAN-V2.md), which supersedes V1 based on shipped Wave-1 through Wave-3 work.
+
 # TRITIUM Plan
 
 ## 1. Title and purpose
