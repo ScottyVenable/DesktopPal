@@ -161,8 +161,10 @@ namespace DesktopPal
                 }
                 catch (IOException ex) when (attempt == 1)
                 {
-                    // File may still be locked by the creating process – wait briefly.
+                    // File may still be locked by the creating process – wait briefly before retry.
                     DebugLogger.Warning($"Could not read '{path}' on attempt {attempt}, retrying. ({ex.Message})");
+                    // Use a brief synchronous wait; ReadFileSafe is intentionally synchronous
+                    // because it is invoked from a FileSystemWatcher callback (non-async context).
                     System.Threading.Thread.Sleep(200);
                 }
                 catch (Exception ex)

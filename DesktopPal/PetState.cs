@@ -186,8 +186,8 @@ namespace DesktopPal
             if (Hunger < 20)
                 Happiness = Clamp(Happiness - decayRate);
 
-            // Level-up check
-            if (Experience >= Level * ExperiencePerLevel)
+            // Level-up check (loop to handle large XP gains spanning multiple levels)
+            while (Experience >= Level * ExperiencePerLevel)
             {
                 Level++;
                 DebugLogger.Info($"Pet levelled up to {Level}!");

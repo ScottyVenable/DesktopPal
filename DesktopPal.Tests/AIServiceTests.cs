@@ -57,41 +57,6 @@ namespace DesktopPal.Tests
                     "application/json")
             };
 
-        // ── Helpers ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Creates an <see cref="AIService"/> that uses <paramref name="handler"/>
-        /// for HTTP calls.
-        /// </summary>
-        private static AIService BuildService(HttpMessageHandler handler)
-        {
-            // AIService uses a static HttpClient, so we use reflection to swap the handler
-            // for testing purposes.  In production code a factory/DI approach would be used.
-            var state = new PetState { Name = "TestPal", Level = 1 };
-
-            // Temporarily replace the private static HttpClient field.
-            var field = typeof(AIService).GetField(
-                "_httpClient",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            if (field is null)
-                throw new InvalidOperationException(
-                    "Could not find '_httpClient' field on AIService. " +
-                    "Ensure the field name matches.");
-
-            // Save original and swap.
-            var original = (HttpClient)field.GetValue(null)!;
-            field.SetValue(null, new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) });
-
-            // Return service and a cleanup action.
-            var service = new AIService(state);
-
-            // Restore original after test (best-effort – tests should be isolated).
-            field.SetValue(null, original);
-
-            return service;
-        }
-
         // ── Tests ────────────────────────────────────────────────────────────────
 
         [Fact]
@@ -100,7 +65,6 @@ namespace DesktopPal.Tests
             var state = new PetState { Name = "TestPal", Level = 1 };
             var handler = new FakeHttpHandler(OkResponse("Hello there!"));
 
-            // Use reflection to inject the fake handler.
             var httpClientField = typeof(AIService).GetField(
                 "_httpClient",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
