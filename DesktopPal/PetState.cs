@@ -43,6 +43,11 @@ namespace DesktopPal
             {
                 string json = File.ReadAllText(SavePath);
                 var state = JsonSerializer.Deserialize<PetState>(json);
+                if (state == null)
+                {
+                    return new PetState();
+                }
+
                 state.UpdateRealTime();
                 return state;
             }

@@ -9,8 +9,11 @@
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
-  </ItemGroup>
+  <!--
+    System.Drawing.Common is provided implicitly by the Windows Desktop runtime
+    when UseWindowsForms is true on net10.0-windows. An explicit PackageReference
+    here triggers NU1510 ("will not be pruned"); the implicit reference is
+    sufficient for the icon / screenshot helpers used by this project.
+  -->
 
 </Project>

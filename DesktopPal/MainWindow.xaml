@@ -10,7 +10,5 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False">
-    <Canvas Name="MainCanvas">
-        <local:PalDrawer x:Name="UI_Drawer" Canvas.Right="20" Canvas.Bottom="20"/>
-    </Canvas>
+    <Canvas Name="MainCanvas"/>
 </Window>
