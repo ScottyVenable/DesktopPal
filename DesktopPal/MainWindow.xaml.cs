@@ -22,6 +22,7 @@ namespace DesktopPal
         private SystemIntegrationService _sys;
         private DispatcherTimer _visionTimer;
         private System.Windows.Forms.NotifyIcon _notifyIcon;
+        private WorldWindow _world;
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
@@ -29,10 +30,19 @@ namespace DesktopPal
         [DllImport("user32.dll")]
         private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
 
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT { public int Left, Top, Right, Bottom; }
+
         public MainWindow()
         {
             InitializeComponent();
             
+            _world = new WorldWindow();
+            _world.Show();
+
             Pet = new PetControl();
             MainCanvas.Children.Add(Pet);
             Canvas.SetLeft(Pet, 100);
@@ -71,7 +81,7 @@ namespace DesktopPal
             contextMenu.Items.Add("Settings", null, (s, e) => ShowSettings());
             contextMenu.Items.Add("Do Not Disturb", null, (s, e) => ToggleDND());
             contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-            contextMenu.Items.Add("Exit", null, (s, e) => System.Windows.Application.Current.Shutdown());
+            contextMenu.Items.Add("Exit", null, (s, e) => { _world.Close(); System.Windows.Application.Current.Shutdown(); });
 
             _notifyIcon.ContextMenuStrip = contextMenu;
             _notifyIcon.DoubleClick += (s, e) => 
@@ -148,14 +158,34 @@ namespace DesktopPal
             x += _velocity.X;
             y += _velocity.Y;
 
-            if (Pet.State.IsHatched && _random.Next(0, 5000) == 0)
+            // Smart Layering: Check if pet is behind active window
+            IntPtr foregroundHwnd = GetForegroundWindow();
+            if (GetWindowRect(foregroundHwnd, out RECT rect))
             {
-                var type = _random.Next(0, 2) == 0 ? "Tree" : "Flower";
-                var deco = new Decoration(type);
-                MainCanvas.Children.Add(deco);
-                Canvas.SetLeft(deco, x);
-                Canvas.SetTop(deco, y + 40);
-                System.Windows.Controls.Panel.SetZIndex(deco, -1);
+                bool isUnderWindow = x > rect.Left && x < rect.Right && y > rect.Top && y < rect.Bottom;
+                if (isUnderWindow && _random.Next(0, 100) < 5) // 5% chance to "sneak" behind
+                {
+                    this.Topmost = false;
+                }
+                else if (!isUnderWindow)
+                {
+                    this.Topmost = true;
+                }
+            }
+
+            // Chance to plant a decoration or poop
+            if (Pet.State.IsHatched)
+            {
+                if (_random.Next(0, 5000) == 0) // Tree/Flower
+                {
+                    var type = _random.Next(0, 2) == 0 ? "Tree" : "Flower";
+                    _world.AddObject(new Decoration(type), x, y + 40);
+                }
+                else if (_random.Next(0, 8000) == 0) // Poop
+                {
+                    _world.AddObject(new Decoration("Poop"), x, y + 60);
+                    Pet.State.Hygiene = Math.Max(0, Pet.State.Hygiene - 10);
+                }
             }
 
             double floor = SystemParameters.PrimaryScreenHeight - Pet.ActualHeight - 40;
@@ -174,6 +204,7 @@ namespace DesktopPal
                 _isDragging = true;
                 _dragOffset = e.GetPosition(Pet);
                 Pet.CaptureMouse();
+                this.Topmost = true; // Always bring to front when touched
             }
             else if (e.ChangedButton == MouseButton.Right)
             {

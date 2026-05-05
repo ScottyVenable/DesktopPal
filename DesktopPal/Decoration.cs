@@ -28,6 +28,11 @@ namespace DesktopPal
                 grid.Children.Add(stem);
                 grid.Children.Add(petal);
             }
+            else if (type == "Poop")
+            {
+                var poop = new Ellipse { Fill = System.Windows.Media.Brushes.SaddleBrown, Width = 20, Height = 15 };
+                grid.Children.Add(poop);
+            }
             
             Content = grid;
         }
