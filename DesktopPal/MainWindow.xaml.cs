@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -26,6 +27,12 @@ namespace DesktopPal
         private readonly WorldWindow _world;
         private readonly CompanionWindow _companionWindow;
         private System.Windows.Point? _targetPosition = null;
+
+        // Live garden plot views, keyed by the persisted plot id. The
+        // dictionary lets us update a single plot's visual when its state
+        // advances without rebuilding the whole canvas. See issue #3.
+        private readonly Dictionary<Guid, GardenPlot> _plotViews = new();
+        private DispatcherTimer? _gardenTimer;
 
         [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
@@ -82,6 +89,20 @@ namespace DesktopPal
 
             _companionWindow = new CompanionWindow(this, Pet);
             InitializeTray();
+
+            // Rehydrate persisted garden plots into the world canvas.
+            // PetState.UpdateRealTime has already advanced their states based
+            // on offline elapsed time, so this is a pure projection step.
+            // See issue #3 and docs/design/world-state.md.
+            RehydrateGardenPlots();
+
+            // Garden lifecycle ticker. One pass per second is plenty — the
+            // shortest transition (Seeded -> Sprout) is 30 s. We fold this
+            // into a dedicated timer rather than the render loop so the
+            // garden keeps advancing even when the pet is dragged.
+            _gardenTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _gardenTimer.Tick += (s, e) => TickGarden();
+            _gardenTimer.Start();
 
             // First-run onboarding (issue #20). Show after the main window
             // has rendered so users see the pet appear, then receive the
@@ -223,10 +244,148 @@ namespace DesktopPal
 
         public void CleanAll()
         {
+            // Clear ephemeral decorations (poop, ad-hoc trees/flowers) but
+            // keep persisted garden plots intact — wiping a player's garden
+            // on a Clean tap would feel awful. Issue #3.
+            var keepers = new List<UIElement>();
+            foreach (UIElement child in _world.WorldCanvas.Children)
+            {
+                if (child is GardenPlot) keepers.Add(child);
+            }
             _world.WorldCanvas.Children.Clear();
+            foreach (var keeper in keepers)
+            {
+                _world.WorldCanvas.Children.Add(keeper);
+            }
+
             Pet.State.Hygiene = 100;
             Pet.ShowChat("All clean! Thank you!");
             Pet.SetEmoteState(PetEmote.Happy, 3);
+        }
+
+        // ── Gardening (issue #3) ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Plant a seed near the pet's current position. Creates a new
+        /// <see cref="GardenPlotData"/> in <see cref="PetState.World"/> and a
+        /// matching <see cref="GardenPlot"/> on the world canvas. Position
+        /// is clamped to the primary work area so plots can never spawn
+        /// under the taskbar or off-screen.
+        /// </summary>
+        public void PlantSeed()
+        {
+            if (!Pet.State.IsHatched)
+            {
+                Pet.ShowChat("Not ready to plant yet...");
+                return;
+            }
+
+            double petX = Canvas.GetLeft(Pet);
+            double petY = Canvas.GetTop(Pet);
+
+            // Drop the plot just below the pet sprite, offset sideways so it
+            // doesn't sit dead-center on the bear. Mirrors the poop spawn
+            // math in GameLoop().
+            double plotX = petX + 50;
+            double plotY = petY + Pet.ActualHeight * 0.85;
+
+            var area = SystemParameters.WorkArea;
+            double maxX = area.Right - GardenConstants.PlotWidth;
+            double maxY = area.Bottom - GardenConstants.PlotHeight;
+            if (plotX < area.Left) plotX = area.Left;
+            if (plotY < area.Top) plotY = area.Top;
+            if (plotX > maxX) plotX = maxX;
+            if (plotY > maxY) plotY = maxY;
+
+            var data = new GardenPlotData
+            {
+                X = plotX,
+                Y = plotY,
+                State = GardenPlotState.Seeded,
+                LastTransition = DateTime.Now
+            };
+            Pet.State.World.Plots.Add(data);
+            AddPlotView(data);
+
+            Pet.SetEmoteState(PetEmote.Happy, 2);
+            Pet.ShowChat("Seed planted!");
+
+            // Persist immediately — gardening is a deliberate user action
+            // and the plot should survive a hard close right after planting.
+            try { Pet.State.Save(); }
+            catch (Exception ex) { Logging.Warn("MainWindow", "Plot save after planting failed.", ex); }
+        }
+
+        private void RehydrateGardenPlots()
+        {
+            if (Pet.State.World?.Plots == null) return;
+
+            var area = SystemParameters.WorkArea;
+            double maxX = area.Right - GardenConstants.PlotWidth;
+            double maxY = area.Bottom - GardenConstants.PlotHeight;
+
+            foreach (var data in Pet.State.World.Plots)
+            {
+                // Defend against resolution changes between sessions: clamp
+                // saved coordinates back into the visible work area rather
+                // than silently losing the plot off-screen.
+                if (data.X < area.Left) data.X = area.Left;
+                if (data.Y < area.Top) data.Y = area.Top;
+                if (data.X > maxX) data.X = maxX;
+                if (data.Y > maxY) data.Y = maxY;
+
+                AddPlotView(data);
+            }
+        }
+
+        private void AddPlotView(GardenPlotData data)
+        {
+            var view = new GardenPlot(data);
+            view.HarvestRequested += HandleHarvest;
+            _plotViews[data.Id] = view;
+            _world.AddObject(view, data.X, data.Y);
+        }
+
+        private void TickGarden()
+        {
+            if (Pet.State.World?.Plots == null) return;
+
+            // Roll forward any plot whose timer elapsed since the last tick.
+            // PetState owns the transition rules so the same logic governs
+            // both online ticks and offline catch-up.
+            Pet.State.AdvancePlots(DateTime.Now);
+
+            // Reflect any state changes into the views.
+            foreach (var data in Pet.State.World.Plots)
+            {
+                if (_plotViews.TryGetValue(data.Id, out var view))
+                {
+                    view.Refresh();
+                }
+            }
+        }
+
+        private void HandleHarvest(GardenPlot plot)
+        {
+            var data = plot.Data;
+            if (data.State != GardenPlotState.Bloom) return;
+
+            // Reward.
+            Pet.State.Happiness = Math.Min(100, Pet.State.Happiness + GardenConstants.HarvestHappinessReward);
+            Pet.State.Experience += GardenConstants.HarvestExperienceReward;
+
+            // Reset the plot back to Empty so the player can re-seed it.
+            // Removing-vs-resetting is a deliberate call: keeping the plot
+            // gives the user a permanent "garden bed" they can tend.
+            data.State = GardenPlotState.Empty;
+            data.LastTransition = DateTime.Now;
+            plot.Refresh();
+
+            Pet.SetEmoteState(PetEmote.Love, 3);
+            Pet.ShowChat("A flower! Thank you!");
+
+            try { Pet.State.Save(); }
+            catch (Exception ex) { Logging.Warn("MainWindow", "Plot save after harvest failed.", ex); }
         }
 
         public void CallPetToMouse()
@@ -426,6 +585,7 @@ namespace DesktopPal
 
             try { _saveTimer?.Stop(); } catch { /* shutdown */ }
             try { _visionTimer?.Stop(); } catch { /* shutdown */ }
+            try { _gardenTimer?.Stop(); } catch { /* shutdown */ }
 
             try { Pet.State.Save(); }
             catch (Exception ex) { Logging.Error("MainWindow", "Final state save failed.", ex); }

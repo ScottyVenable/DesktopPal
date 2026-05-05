@@ -12,6 +12,8 @@
         <Geometry x:Key="Icon.Call">M 50,10 C 30,10 15,30 15,50 C 15,80 50,95 50,95 C 50,95 85,80 85,50 C 85,30 70,10 50,10 Z M 50,65 C 42,65 35,57 35,50 C 35,42 42,35 50,35 C 58,35 65,42 65,50 C 65,57 58,65 50,65 Z</Geometry>
         <Geometry x:Key="Icon.Settings">M 50,35 C 42,35 35,42 35,50 C 35,58 42,65 50,65 C 58,65 65,58 65,50 C 65,42 58,35 50,35 Z M 95,50 L 80,42 L 80,58 L 95,50 Z M 5,50 L 20,42 L 20,58 L 5,50 Z M 50,5 L 42,20 L 58,20 L 50,5 Z M 50,95 L 42,80 L 58,80 L 50,95 Z M 79,21 L 67,29 L 71,37 Z M 21,21 L 33,29 L 29,37 Z M 79,79 L 67,71 L 71,63 Z M 21,79 L 33,71 L 29,63 Z</Geometry>
         <Geometry x:Key="Icon.Chat">M 15,20 C 15,15 20,10 25,10 L 75,10 C 80,10 85,15 85,20 L 85,55 C 85,60 80,65 75,65 L 40,65 L 25,85 L 25,65 C 20,65 15,60 15,55 Z</Geometry>
+        <!-- Plant: a sprout in soil. Used by the gardening loop (issue #3). -->
+        <Geometry x:Key="Icon.Plant">M 50,90 L 50,50 M 50,55 C 35,55 25,40 25,30 C 40,30 50,40 50,55 Z M 50,55 C 65,55 75,40 75,30 C 60,30 50,40 50,55 Z M 15,90 L 85,90</Geometry>
 
         <!-- ── Status Panel Inline Buttons ── -->
         <Style x:Key="StatusButtonStyle" TargetType="Button">

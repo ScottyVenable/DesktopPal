@@ -312,9 +312,10 @@
                         <GradientStop Color="#EBF4FF" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
-                <UniformGrid Columns="4">
+                <UniformGrid Columns="5">
                     <Button Tag="{StaticResource Icon.Food}"     Content="Feed"     Style="{StaticResource ActionBtn}" Click="Feed_Click"     Margin="3,0"/>
                     <Button Tag="{StaticResource Icon.Clean}"    Content="Clean"    Style="{StaticResource ActionBtn}" Click="Clean_Click"    Margin="3,0"/>
+                    <Button Tag="{StaticResource Icon.Plant}"    Content="Plant"    Style="{StaticResource ActionBtn}" Click="Plant_Click"    Margin="3,0"/>
                     <Button Tag="{StaticResource Icon.Call}"     Content="Call"     Style="{StaticResource ActionBtn}" Click="Call_Click"     Margin="3,0"/>
                     <Button Tag="{StaticResource Icon.Settings}" Content="Settings" Style="{StaticResource ActionBtn}" Click="Settings_Click" Margin="3,0"/>
                 </UniformGrid>

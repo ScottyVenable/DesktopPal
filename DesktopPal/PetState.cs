@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -11,6 +12,35 @@ namespace DesktopPal
         Watching,
         Sleeping,
         Eating
+    }
+
+    /// <summary>
+    /// Persisted record for a single garden plot (issue #3). Position is in
+    /// WPF device-independent pixels relative to the primary work area at
+    /// save time. <see cref="LastTransition"/> anchors the lifecycle clock so
+    /// state can advance offline using the same elapsed-real-time pattern as
+    /// the pet's stat decay.
+    /// </summary>
+    public class GardenPlotData
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public double X { get; set; }
+        public double Y { get; set; }
+        public GardenPlotState State { get; set; } = GardenPlotState.Empty;
+        public DateTime LastTransition { get; set; } = DateTime.Now;
+    }
+
+    /// <summary>
+    /// Lightweight world-state container persisted alongside <see cref="PetState"/>.
+    /// Lives inside the same save file as a forward-compatible field so older
+    /// saves without a World node still load (System.Text.Json defaults to a
+    /// fresh empty instance). Full split into a separate world_state.json is
+    /// scoped in docs/design/world-state.md and is out of MVP scope.
+    /// </summary>
+    public class WorldState
+    {
+        public int SchemaVersion { get; set; } = 1;
+        public List<GardenPlotData> Plots { get; set; } = new();
     }
 
     public class PetState
@@ -40,6 +70,10 @@ namespace DesktopPal
         // installation. See issue #20.
         public bool HasCompletedOnboarding { get; set; } = false;
 
+        // Persistent world objects (issue #3). Older saves that predate the
+        // gardening loop will deserialize this as a fresh empty WorldState.
+        public WorldState World { get; set; } = new WorldState();
+
         private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 
         public static PetState Load()
@@ -51,6 +85,12 @@ namespace DesktopPal
                 if (state == null)
                 {
                     return new PetState();
+                }
+
+                // Backwards-compat: older saves predate the World field.
+                if (state.World == null)
+                {
+                    state.World = new WorldState();
                 }
 
                 state.UpdateRealTime();
@@ -85,8 +125,49 @@ namespace DesktopPal
             Hygiene = Math.Max(0, Hygiene - (hours * 3.0));
             Happiness = Math.Max(0, Happiness - (hours * 2.0));
             Energy = Math.Max(0, Energy - (hours * 4.0));
-            
+
+            // Advance any active garden plots using the same offline-real-time
+            // pattern. A plot may need to step forward more than once if the
+            // user was away long enough to skip a stage.
+            if (World != null)
+            {
+                AdvancePlots(DateTime.Now);
+            }
+
             LastSeen = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Walks every plot and rolls its state forward to whatever <paramref name="now"/>
+        /// implies. Bloom is a terminal state (waits for harvest); Empty is
+        /// inert. Each transition resets <see cref="GardenPlotData.LastTransition"/>
+        /// so the next stage is timed from the moment the previous one
+        /// "completed" rather than from when the user came back.
+        /// </summary>
+        public void AdvancePlots(DateTime now)
+        {
+            foreach (var plot in World.Plots)
+            {
+                // Loop because a long absence can skip Sprout entirely.
+                while (true)
+                {
+                    if (plot.State == GardenPlotState.Seeded
+                        && now - plot.LastTransition >= GardenConstants.SeededToSproutDelay)
+                    {
+                        plot.LastTransition = plot.LastTransition + GardenConstants.SeededToSproutDelay;
+                        plot.State = GardenPlotState.Sprout;
+                        continue;
+                    }
+                    if (plot.State == GardenPlotState.Sprout
+                        && now - plot.LastTransition >= GardenConstants.SproutToBloomDelay)
+                    {
+                        plot.LastTransition = plot.LastTransition + GardenConstants.SproutToBloomDelay;
+                        plot.State = GardenPlotState.Bloom;
+                        continue;
+                    }
+                    break;
+                }
+            }
         }
 
         public void Tick()

@@ -233,6 +233,12 @@ namespace DesktopPal
             _mainWindow.CallPetToMouse();
         }
 
+        private void Plant_Click(object sender, RoutedEventArgs e)
+        {
+            _mainWindow.PlantSeed();
+            RefreshFromState();
+        }
+
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
             _mainWindow.ShowSettings();
