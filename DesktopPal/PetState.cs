@@ -19,6 +19,8 @@ namespace DesktopPal
         public int Level { get; set; } = 1;
         public double Experience { get; set; } = 0;
         public bool IsHatched { get; set; } = false;
+        public string ModelName { get; set; } = "local-model";
+        public bool VisionEnabled { get; set; } = true;
 
         private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 

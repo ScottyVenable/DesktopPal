@@ -5,8 +5,11 @@
     <Grid Name="PetGrid" Cursor="Hand">
         <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center">
             <!-- Chat Reply Bubble -->
-            <Border Name="ChatBubble" Background="White" CornerRadius="10" Padding="8" Margin="0,0,0,5" BorderBrush="SkyBlue" BorderThickness="2" Visibility="Collapsed" MaxWidth="180">
-                <TextBlock Name="ChatText" FontSize="11" TextWrapping="Wrap" Text="Hello!"/>
+            <Border Name="ChatBubble" Background="#F0F8FF" CornerRadius="15" Padding="10" Margin="0,0,0,10" BorderBrush="#87CEFA" BorderThickness="2" Visibility="Collapsed" MaxWidth="180">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="5" Color="LightGray" Opacity="0.5" ShadowDepth="2"/>
+                </Border.Effect>
+                <TextBlock Name="ChatText" FontSize="12" Foreground="#333" TextWrapping="Wrap" Text="Hello!"/>
             </Border>
 
             <!-- Status & Interaction Bubble -->

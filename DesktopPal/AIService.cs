@@ -12,9 +12,11 @@ namespace DesktopPal
         private static readonly HttpClient client = new HttpClient();
         private const string BaseUrl = "http://localhost:1234/v1/chat/completions";
         private List<object> _messages = new List<object>();
+        private PetState _state;
 
         public AIService(PetState state)
         {
+            _state = state;
             string systemPrompt = $"You are a digital pet named {state.Name}. " +
                                   $"You are currently at level {state.Level}. " +
                                   $"Your hunger is {state.Hunger:F0}%, happiness is {state.Happiness:F0}%. " +
@@ -30,7 +32,7 @@ namespace DesktopPal
 
             var requestBody = new
             {
-                model = "local-model", // LM Studio uses whatever model is loaded
+                model = _state.ModelName,
                 messages = _messages,
                 temperature = 0.7,
                 max_tokens = 100
