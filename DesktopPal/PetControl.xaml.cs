@@ -34,6 +34,24 @@ namespace DesktopPal
             _chatTimer.Start();
         }
 
+        public void SetEmote(bool active)
+        {
+            if (active)
+            {
+                LeftEye.Visibility = Visibility.Collapsed;
+                RightEye.Visibility = Visibility.Collapsed;
+                LeftEmote.Visibility = Visibility.Visible;
+                RightEmote.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                LeftEye.Visibility = Visibility.Visible;
+                RightEye.Visibility = Visibility.Visible;
+                LeftEmote.Visibility = Visibility.Collapsed;
+                RightEmote.Visibility = Visibility.Collapsed;
+            }
+        }
+
         public void UpdateVisuals()
         {
             HungerBar.Value = State.Hunger;
@@ -41,6 +59,11 @@ namespace DesktopPal
             {
                 StatusBubble.Visibility = Visibility.Visible;
                 StatusText.Text = "I'm hungry!";
+                SetEmote(true);
+            }
+            else
+            {
+                SetEmote(false);
             }
             
             PetBody.Fill = State.IsHatched ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.White;

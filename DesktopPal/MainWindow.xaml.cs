@@ -23,6 +23,12 @@ namespace DesktopPal
         private DispatcherTimer _visionTimer;
         private System.Windows.Forms.NotifyIcon _notifyIcon;
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -84,7 +90,6 @@ namespace DesktopPal
 
         private void ToggleDND()
         {
-            // Simple DND logic: hide the pet or stop wandering
             Pet.Visibility = Pet.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 
@@ -105,7 +110,20 @@ namespace DesktopPal
         {
             if (!Pet.State.IsHatched || !Pet.State.VisionEnabled) return;
             
-            string comment = await Pet.AIService.ChatAsync("I'm just sitting here watching you work. What are you up to?");
+            IntPtr hwnd = GetForegroundWindow();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+            GetWindowText(hwnd, sb, 256);
+            string activeWindow = sb.ToString();
+
+            string prompt = $"I am looking at your screen. You are currently using '{activeWindow}'. ";
+            if (activeWindow.Contains("Visual Studio") || activeWindow.Contains("Code"))
+                prompt += "It looks like you are coding! I should say something encouraging.";
+            else if (activeWindow.Contains("Chrome") || activeWindow.Contains("Edge"))
+                prompt += "You are browsing the web. I wonder what you are looking for?";
+            else
+                prompt += "I wonder what you are up to?";
+
+            string comment = await Pet.AIService.ChatAsync(prompt);
             Pet.ShowChat(comment);
         }
 
@@ -130,7 +148,6 @@ namespace DesktopPal
             x += _velocity.X;
             y += _velocity.Y;
 
-            // Chance to plant a decoration
             if (Pet.State.IsHatched && _random.Next(0, 5000) == 0)
             {
                 var type = _random.Next(0, 2) == 0 ? "Tree" : "Flower";

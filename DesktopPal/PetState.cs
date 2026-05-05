@@ -4,6 +4,15 @@ using System.Text.Json;
 
 namespace DesktopPal
 {
+    public enum PetActionState
+    {
+        Idle,
+        Wandering,
+        Watching,
+        Sleeping,
+        Eating
+    }
+
     public class PetState
     {
         public string Name { get; set; } = "Buddy";
@@ -21,6 +30,7 @@ namespace DesktopPal
         public bool IsHatched { get; set; } = false;
         public string ModelName { get; set; } = "local-model";
         public bool VisionEnabled { get; set; } = true;
+        public PetActionState CurrentState { get; set; } = PetActionState.Idle;
 
         private static string SavePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pet_state.json");
 

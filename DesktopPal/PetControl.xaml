@@ -31,8 +31,16 @@
             <!-- Pet Graphic -->
             <Grid Width="60" Height="80">
                 <Ellipse Fill="White" Stroke="Black" StrokeThickness="2" Name="PetBody"/>
-                <Ellipse Fill="Black" Width="5" Height="5" Margin="15,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                <Ellipse Fill="Black" Width="5" Height="5" Margin="0,25,15,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                <!-- Left Eye -->
+                <Grid Margin="15,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="10" Height="10">
+                    <Ellipse Fill="Black" Name="LeftEye"/>
+                    <TextBlock Name="LeftEmote" Text=">" Visibility="Collapsed" FontSize="8" FontWeight="Bold"/>
+                </Grid>
+                <!-- Right Eye -->
+                <Grid Margin="0,25,15,0" HorizontalAlignment="Right" VerticalAlignment="Top" Width="10" Height="10">
+                    <Ellipse Fill="Black" Name="RightEye"/>
+                    <TextBlock Name="RightEmote" Text="&lt;" Visibility="Collapsed" FontSize="8" FontWeight="Bold"/>
+                </Grid>
             </Grid>
         </StackPanel>
     </Grid>
