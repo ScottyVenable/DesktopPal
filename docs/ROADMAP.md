@@ -96,6 +96,9 @@ attached to a planning issue and referenced from the relevant epic.
 | [simulation-runtime.md](design/simulation-runtime.md) | Fixed-step simulation loop, service boundaries, migration off `CompositionTarget.Rendering` | #14 | Tritium-0 |
 | [persistence.md](design/persistence.md) | Save path under `%LOCALAPPDATA%\DesktopPal\`, schema version envelope, atomic write, backup and recovery | #15 | Tritium-0 |
 | [ai-memory.md](design/ai-memory.md) | Layered memory model (persona / long-term / mid-term / short-term), versioned prompt templates, eval seams, degraded-mode interplay with #18 | #25 | Tritium-0 design / Tritium-4 implementation |
+| [world-state.md](design/world-state.md) | Persistent world state, decoration model, type catalog, offline lifecycle, `world_state.json` under the persistence envelope | #28 | Tritium-5 Living Desktop |
+| [multi-pet.md](design/multi-pet.md) | Multi-pet runtime topology, `WorldState.Pets` collection, species/theme manifest seam, v1→v2 migrator, per-pet AI memory isolation | #30 | Tritium-6 Companion Platform |
+| [packaging.md](design/packaging.md) | Distribution path (self-contained single-file publish → signed Inno Setup installer → Velopack), release readiness checklist, code-signing risks | #23 | Tritium-0 design / phased implementation |
 
 When a design doc lands, the linked issue moves from `status:needs-design`
 to `Ready` and acquires its acceptance criteria from the doc's Migration

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added a first-run onboarding window that introduces the pet, surfaces the companion-panel hotkey (read live from `PetState`), and explains the tray fallback plus feed/clean basics. Persisted via a new `HasCompletedOnboarding` flag on `PetState` so it appears once per installation; placeholder copy uses the blue-bear voice and will be replaced from `docs/content/onboarding.md` once Vex's pass lands (#20).
+- Pet visuals now have animation-ready groundwork: a gentle ~3px / 1.6s idle bob storyboard and a randomised 3–6s blink that briefly hides the active face for ~120ms. Idle bob auto-pauses while the pet is being dragged and resumes on release. This is scaffolding only — the full state-machine-driven animation system (sprite atlas / Lottie option) is intentionally deferred (#2).
 - Removed the legacy `PalDrawer` user control and its supporting paw-toggle / drawer-button styles, fully retiring the drawer surface in favor of the companion panel and tray fallback (#31).
 - Cleaned up an empty `OnDrawerResized` shim from `MainWindow` left over from the drawer migration (#31).
 - Pet movement and initial spawn now respect `SystemParameters.WorkArea` on all four edges, so the pet no longer wanders under or onto the taskbar regardless of taskbar position (#12).
